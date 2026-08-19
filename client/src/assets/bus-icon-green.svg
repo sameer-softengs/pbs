@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <ellipse cx="16" cy="22" rx="13" ry="5" fill="#27ae60"/>
+    <path d="M4 16 L4 10 Q4 6 8 6 L24 6 Q28 6 28 10 L28 16" fill="#2ecc71" stroke="#27ae60" stroke-width="1.5"/>
+    <path d="M8 10 L8 16" stroke="#27ae60" stroke-width="1" opacity="0.3"/>
+    <path d="M16 10 L16 16" stroke="#27ae60" stroke-width="1" opacity="0.3"/>
+    <path d="M24 10 L24 16" stroke="#27ae60" stroke-width="1" opacity="0.3"/>
+    <circle cx="9" cy="22" r="3" fill="#2c3e50"/>
+    <circle cx="23" cy="22" r="3" fill="#2c3e50"/>
+    <rect x="12" y="12" width="8" height="4" rx="1" fill="#fff" opacity="0.4"/>
+  </g>
+</svg>
