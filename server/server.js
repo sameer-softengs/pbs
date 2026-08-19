@@ -8,6 +8,8 @@ import { fetchRoadPath } from './engine/roadPath.js';
 import { snapStopsToRoute } from './engine/geoHelpers.js';
 
 const app = express();
+const PORT = process.env.PORT || 4000;
+const CLIENT_URL = process.env.CLIENT_URL || `http://localhost:${PORT}`;
 
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -20,12 +22,33 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(cors());
+app.use(cors({ origin: CLIENT_URL }));
+
+const rateLimit = new Map();
+const RATE_WINDOW = 10000;
+const RATE_MAX = 30;
+
+app.use((req, res, next) => {
+  const ip = req.ip;
+  const now = Date.now();
+  const entry = rateLimit.get(ip);
+  if (!entry || now - entry.start > RATE_WINDOW) {
+    rateLimit.set(ip, { start: now, count: 1 });
+    return next();
+  }
+  entry.count++;
+  if (entry.count > RATE_MAX) {
+    return res.status(429).json({ error: 'Too many requests' });
+  }
+  next();
+});
 
 let roadPathData = { path: [], source: 'loading' };
 
 const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: "*" } });
+const io = new Server(httpServer, {
+  cors: { origin: CLIENT_URL, methods: ['GET', 'POST'] }
+});
 
 let snappedStops = route1Data;
 
@@ -73,5 +96,4 @@ app.get('/api/fleet', (req, res) => {
   res.json(getFleetState());
 });
 
-const PORT = process.env.PORT || 4000;
 httpServer.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));

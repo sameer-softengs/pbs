@@ -13,7 +13,7 @@ export default function App() {
   const [routeData, setRouteData] = useState({ stops: [], roadPath: [] });
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+    const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
     fetch(`${apiUrl}/api/route`)
       .then(res => res.json())
       .then(data => setRouteData({ stops: data.stops || [], roadPath: data.roadPath || [] }))
