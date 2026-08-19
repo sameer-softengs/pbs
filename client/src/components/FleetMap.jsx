@@ -52,7 +52,7 @@ function TerminalLabels({ roadPath }) {
         className: '',
         iconSize: [90, 24],
         iconAnchor: [-8, 12],
-        html: '<div class="terminal-label">Dockyard</div>',
+        html: '<div class="terminal-label">Model Colony</div>',
       }),
     }).addTo(map);
 
@@ -61,7 +61,7 @@ function TerminalLabels({ roadPath }) {
         className: '',
         iconSize: [90, 24],
         iconAnchor: [-8, 12],
-        html: '<div class="terminal-label">Model Colony</div>',
+        html: '<div class="terminal-label">Dockyard</div>',
       }),
     }).addTo(map);
 
