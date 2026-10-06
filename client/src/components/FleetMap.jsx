@@ -1,7 +1,40 @@
 import { MapContainer, TileLayer, CircleMarker, Tooltip, Marker, Popup, useMap } from 'react-leaflet';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo, useState, memo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import Icon from './Icon';
+
+function MapTools({ roadPath, routeStops, buses, selectedBus, focusStop }) {
+  const map = useMap();
+  const focusedBus = useRef(null);
+  useEffect(() => {
+    // OSM attribution remains visible; remove Leaflet's optional library credit.
+    map.attributionControl.setPrefix(false);
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(map.getContainer());
+    return () => observer.disconnect();
+  }, [map]);
+  useEffect(() => {
+    if (roadPath.length < 2 && routeStops.length > 1) {
+      map.fitBounds(L.latLngBounds(routeStops.map(stop=>[stop.lat,stop.lng])), { padding: [45,45] });
+    }
+  }, [map, roadPath, routeStops]);
+  useEffect(() => {
+    if (focusStop) map.flyTo([focusStop.lat, focusStop.lng], 16, { duration: 0.6 });
+  }, [map, focusStop]);
+  useEffect(() => {
+    if (!selectedBus) { focusedBus.current = null; return; }
+    const bus = buses.find(item => item.busId === selectedBus);
+    if (bus?.location && focusedBus.current !== selectedBus) {
+      map.flyTo([bus.location.lat, bus.location.lng], 15, { duration: 0.6 });
+      focusedBus.current = selectedBus;
+    }
+  }, [map, buses, selectedBus]);
+  return <button className="map-recenter" title="Fit the full R1 route" aria-label="Fit the full R1 route" onClick={() => {
+    const points=roadPath.length>1?roadPath:routeStops.map(stop=>[stop.lat,stop.lng]);
+    if(points.length>1)map.fitBounds(L.latLngBounds(points),{padding:[45,45]});
+  }}><Icon name="target"/></button>;
+}
 
 function RoadPathLayer({ roadPath }) {
   const map = useMap();
@@ -15,12 +48,13 @@ function RoadPathLayer({ roadPath }) {
     if (!roadPath || roadPath.length < 2) return;
 
     const polyline = L.polyline(roadPath.map(p => [p[0], p[1]]), {
-      color: '#3b82f6',
+      color: '#d8433d',
       weight: 4,
-      opacity: 0.7,
+      opacity: 0.85,
       lineCap: 'round',
     });
     polyline.addTo(map);
+    map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
     layerRef.current = polyline;
 
     return () => {
@@ -34,61 +68,56 @@ function RoadPathLayer({ roadPath }) {
   return null;
 }
 
-function TerminalLabels({ roadPath }) {
+function TerminalLabels({ routeStops }) {
   const map = useMap();
-  const labelsRef = useRef([]);
-
   useEffect(() => {
-    labelsRef.current.forEach(l => map.removeLayer(l));
-    labelsRef.current = [];
-
-    if (!roadPath || roadPath.length < 2) return;
-
-    const start = roadPath[0];
-    const end = roadPath[roadPath.length - 1];
-
-    const startLabel = L.marker([start[0], start[1]], {
-      icon: L.divIcon({
-        className: '',
-        iconSize: [90, 24],
-        iconAnchor: [-8, 12],
-        html: '<div class="terminal-label">Dockyard</div>',
-      }),
-    }).addTo(map);
-
-    const endLabel = L.marker([end[0], end[1]], {
-      icon: L.divIcon({
-        className: '',
-        iconSize: [90, 24],
-        iconAnchor: [-8, 12],
-        html: '<div class="terminal-label">Model Colony</div>',
-      }),
-    }).addTo(map);
-
-    labelsRef.current = [startLabel, endLabel];
-
-    return () => {
-      labelsRef.current.forEach(l => map.removeLayer(l));
-      labelsRef.current = [];
-    };
-  }, [map, roadPath]);
-
+    if (routeStops.length < 2) return;
+    const labels=[routeStops[0],routeStops.at(-1)].map(stop=>{
+      const label=document.createElement('div');
+      label.className='terminal-label';label.textContent=stop.name;
+      return L.marker([stop.lat,stop.lng],{icon:L.divIcon({className:'',iconSize:[90,24],iconAnchor:[-8,12],html:label})}).addTo(map);
+    });
+    return ()=>labels.forEach(label=>map.removeLayer(label));
+  },[map,routeStops]);
   return null;
 }
 
+const StopMarker=memo(function StopMarker({ stop, index, selected, routeCode }) {
+  const marker = useRef(null);
+  const map = useMap();
+  useEffect(() => {
+    if (!selected) return;
+    const open = () => marker.current?.openPopup();
+    map.once('moveend', open);
+    return () => map.off('moveend', open);
+  }, [map, selected]);
+  return <CircleMarker ref={marker} center={[stop.lat, stop.lng]} radius={selected ? 8 : 5}
+    fillColor={selected ? '#d8433d' : '#fff'} color="#d8433d" weight={2} fillOpacity={1}>
+    <Tooltip direction="top" offset={[0, -7]}>{stop.name}</Tooltip>
+    <Popup maxWidth={280}>
+      <div className="stop-popup">
+        <span className="eyebrow">{routeCode} · STOP {String(index + 1).padStart(2, '0')}</span>
+        <h3>{stop.name}</h3>
+        <p>Bus stop location</p>
+        <dl><dt>Latitude</dt><dd>{stop.lat.toFixed(6)}</dd><dt>Longitude</dt><dd>{stop.lng.toFixed(6)}</dd></dl>
+      </div>
+    </Popup>
+  </CircleMarker>;
+});
+
 function BusMarker({ bus }) {
   const isDown = bus.direction === 'down';
-  const heading = isDown ? 'Model Colony' : 'Dockyard';
+  const heading = bus.directionLabel.replace(/^To /, '');
   const dirClass = isDown ? 'down' : 'up';
 
-  const icon = L.divIcon({
+  const icon = useMemo(()=>L.divIcon({
     className: '',
     iconSize: [32, 32],
     iconAnchor: [16, 16],
     html: `
       <div style="
         width:32px;height:32px;border-radius:50%;
-        background:#dc2626;color:#fff;
+        background:${isDown ? '#dc4038' : '#285b88'};color:#fff;
         display:flex;align-items:center;justify-content:center;
         font-size:14px;font-weight:700;
         border:2px solid #fff;
@@ -97,7 +126,7 @@ function BusMarker({ bus }) {
         transition:transform 0.15s;
       ">${isDown ? '↑' : '↓'}</div>
     `,
-  });
+  }), [isDown]);
 
   return (
     <Marker position={[bus.location.lat, bus.location.lng]} icon={icon}>
@@ -129,32 +158,26 @@ function BusMarker({ bus }) {
   );
 }
 
-export default function FleetMap({ buses = [], routeStops = [], roadPath = [] }) {
+export default function FleetMap({ buses = [], routeStops = [], roadPath = [], selectedBus, focusStop, routeCode = 'R1' }) {
+  const [tileError,setTileError]=useState(false);
+  const [tileRetry,setTileRetry]=useState(0);
+  const tileEvents=useMemo(()=>({tileerror:()=>setTileError(true)}),[]);
+  const mappedStops=useMemo(()=>routeStops.filter(stop=>Number.isFinite(stop.lat)&&Number.isFinite(stop.lng)),[routeStops]);
   return (
-    <div style={{ flex: 1 }}>
+    <div className="map-canvas">
       <MapContainer center={[24.8710, 67.0870]} zoom={12} style={{ height: '100%', width: '100%' }}>
-        <TileLayer
-          attribution='&copy; OpenStreetMap'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        <TileLayer key={tileRetry} eventHandlers={tileEvents}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
+        {tileError&&<div className="tile-error" role="status">Map tiles could not load. Stops and route are still shown.<button onClick={()=>{setTileError(false);setTileRetry(count=>count+1);}}>Retry map</button></div>}
         <RoadPathLayer roadPath={roadPath} />
-        <TerminalLabels roadPath={roadPath} />
+        <MapTools roadPath={roadPath} routeStops={mappedStops} buses={buses} selectedBus={selectedBus} focusStop={focusStop}/>
+        <TerminalLabels routeStops={mappedStops} />
 
-        {Array.isArray(routeStops) && routeStops.map((stop, idx) => (
-          <CircleMarker
-            key={stop.id || `stop-${idx}`}
-            center={[stop.lat, stop.lng]}
-            radius={4}
-            fillColor="#0d9488"
-            color="#fff"
-            weight={1.5}
-            fillOpacity={1}
-          >
-            <Tooltip direction="top" offset={[0, -6]}>
-              <span style={{ fontSize: 11, fontWeight: 500 }}>{stop.name}</span>
-            </Tooltip>
-          </CircleMarker>
+        {mappedStops.map((stop, idx) => (
+          <StopMarker key={stop.id || `stop-${idx}`} stop={stop} index={idx} routeCode={routeCode} selected={focusStop?.id === stop.id}/>
         ))}
 
         {Array.isArray(buses) && buses.filter(bus => bus.location).map((bus) => (

@@ -1,85 +1,9 @@
-export default function Dashboard({ onNavigate }) {
-  return (
-    <div className="dash">
-      <div className="dash-bg" />
-
-      <div className="dash-content">
-        <div className="dash-brand">
-          <div className="brand-icon">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect x="5" y="6" width="22" height="16" rx="3" fill="#fff"/>
-              <rect x="7" y="8" width="7" height="6" rx="1" fill="#bfdbfe"/>
-              <rect x="16" y="8" width="9" height="6" rx="1" fill="#bfdbfe"/>
-              <rect x="5" y="16" width="22" height="2" fill="#fecaca"/>
-              <circle cx="11" cy="25" r="2" fill="#fff"/>
-              <circle cx="21" cy="25" r="2" fill="#fff"/>
-              <rect x="13" y="23.5" width="6" height="2" rx="0.5" fill="#fbbf24"/>
-            </svg>
-          </div>
-          <div className="brand-text">
-            <span className="brand-name">PBS</span>
-            <span className="brand-sub">Peoples Bus Service</span>
-          </div>
-        </div>
-
-        <div className="dash-head">
-          <h1>Welcome back</h1>
-          <p>Choose an option to get started</p>
-        </div>
-
-        <div className="dash-actions">
-          <button className="action-card live" onClick={() => onNavigate('track')}>
-            <div className="action-left">
-              <div className="action-icon live-icon">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <circle cx="10" cy="10" r="3" fill="#fff"/>
-                  <path d="M10 2v3M10 15v3M2 10h3M15 10h3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
-                  <circle cx="10" cy="10" r="7" stroke="#fff" strokeWidth="1.5" fill="none"/>
-                </svg>
-              </div>
-              <div>
-                <span className="action-title">Track My Bus</span>
-                <span className="action-desc">Live GPS · Real-time arrivals</span>
-              </div>
-            </div>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </button>
-
-          <button className="action-card disabled" disabled>
-            <div className="action-left">
-              <div className="action-icon">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M3 14l4-4 3 3 4-5 3 3" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <rect x="2" y="3" width="16" height="14" rx="2" stroke="#999" strokeWidth="1.5" fill="none"/>
-                </svg>
-              </div>
-              <div>
-                <span className="action-title">Report an Issue</span>
-                <span className="action-desc">Delays · Safety · Service</span>
-              </div>
-            </div>
-            <span className="soon-tag">Soon</span>
-          </button>
-
-          <button className="action-card disabled" disabled>
-            <div className="action-left">
-              <div className="action-icon">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <circle cx="10" cy="7" r="4" stroke="#999" strokeWidth="1.5" fill="none"/>
-                  <path d="M3 18c0-3.87 3.13-7 7-7s7 3.13 7 7" stroke="#999" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-                </svg>
-              </div>
-              <div>
-                <span className="action-title">Suggestions</span>
-                <span className="action-desc">Route improvements · Feedback</span>
-              </div>
-            </div>
-            <span className="soon-tag">Soon</span>
-          </button>
-        </div>
-
-        <span className="dash-version">Prototype v1.0 · OpenStreetMap</span>
-      </div>
-    </div>
-  );
+import Icon from './Icon';
+export default function Dashboard({ onNavigate, stopCount, distance, routeCount }) {
+  return <main className="dashboard-page">
+    <div className="dash-hero"><div className="hero-copy"><span className="eyebrow"><span className="status-dot"/> YOUR CITY. BETTER CONNECTED.</span><h1>A clearer way<br/>to move through <em>Karachi.</em></h1><p>Explore your bus route, see every stop, and follow the journey in one place.</p><button className="primary-button" onClick={()=>onNavigate('tracking')}><Icon name="target"/>Open bus tracker<Icon name="arrow"/></button><span className="hero-note">{routeCount || 20} Karachi routes · Simulated fleet preview</span></div><div className="hero-route"><div className="hero-route-top"><span className="route-code">R1</span><span>THE CROSS-CITY CONNECTION</span><Icon name="bus" size={28}/></div><div className="journey-graphic"><span><i/>Khokhrapar</span><span><i/>Model Colony</span><span><i/>Shahrah-e-Faisal</span><span><i/>Saddar</span><span><i/>Dockyard</span><div className="graphic-bus"><Icon name="bus" size={24}/></div></div><div className="hero-route-bottom"><strong>{distance?.toFixed(1) || '30.4'} <small>km of connected roads</small></strong><span>{stopCount || 44} stops</span></div></div></div>
+    <div className="overview-title"><div><span className="eyebrow">PLAN YOUR JOURNEY</span><h2>Everything along the way.</h2></div><span>Peoples Bus Service / Karachi</span></div>
+    <div className="overview-cards"><button onClick={()=>onNavigate('tracking')}><span className="feature-icon"><Icon name="target" size={24}/></span><h3>Follow your bus</h3><p>Explore a moving fleet and estimated arrivals along R1.</p><span className="card-link">Open tracker <Icon name="arrow" size={18}/></span></button><button onClick={()=>onNavigate('route-select')}><span className="feature-icon"><Icon name="map" size={24}/></span><h3>Know your route</h3><p>Find the complete route, terminals, and stops across the city.</p><span className="card-link">Browse routes <Icon name="arrow" size={18}/></span></button><div><span className="feature-icon"><Icon name="pin" size={24}/></span><h3>Built around your city</h3><p>Detailed city streets and published stop locations across Karachi.</p><span className="quiet-pill">{routeCount || 20} routes in the directory</span></div></div>
+    <footer className="dashboard-footer"><span>PBS / Karachi transit explorer</span><span>Independent prototype · Fleet data is simulated</span></footer>
+  </main>;
 }

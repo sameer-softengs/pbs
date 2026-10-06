@@ -24,7 +24,16 @@ export function snapStopsToRoute(stops, roadPath) {
     let bestDist = Infinity;
     let bestPoint = null;
 
-    for (const point of roadPath) {
+    const lngScale = Math.cos(stop.lat * Math.PI / 180);
+    for (let i = 0; i < roadPath.length - 1; i++) {
+      const start = roadPath[i];
+      const end = roadPath[i + 1];
+      const dx = (end[1] - start[1]) * lngScale;
+      const dy = end[0] - start[0];
+      const lengthSquared = dx * dx + dy * dy;
+      const fraction = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1,
+        (((stop.lng - start[1]) * lngScale) * dx + (stop.lat - start[0]) * dy) / lengthSquared));
+      const point = [start[0] + fraction * dy, start[1] + fraction * (end[1] - start[1])];
       const d = calculateHaversineDistance(stop.lat, stop.lng, point[0], point[1]);
       if (d < bestDist) {
         bestDist = d;
@@ -32,6 +41,8 @@ export function snapStopsToRoute(stops, roadPath) {
       }
     }
 
+    // Reject unrelated corridors instead of silently moving a stop across town.
+    if (bestDist > 250) throw new Error(`R1 stop ${stop.name} is ${Math.round(bestDist)}m from its road route`);
     return { ...stop, lat: bestPoint[0], lng: bestPoint[1] };
   });
 }
