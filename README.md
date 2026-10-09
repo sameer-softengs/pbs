@@ -2,9 +2,29 @@
 
 ## Run locally
 
-From `server`: `npm ci`, then `CLIENT_URL=http://localhost:5173 npm start`.
-From `client`: `npm ci`, then `VITE_API_URL=http://localhost:4000 npm run dev -- --host 127.0.0.1 --port 5173 --strictPort`.
-Open http://localhost:5173.
+Requires Node 22.12+ and npm. Use two terminals from the project directory.
+
+Terminal 1 (backend):
+```sh
+cd server
+npm ci
+npm start
+```
+
+Terminal 2 (frontend):
+```sh
+cd client
+npm ci
+npm run dev
+```
+
+Open http://localhost:5173. Keep both terminals running; Ctrl+C stops each process.
+Dependency installation is only needed on first setup or after dependencies change.
+The frontend forwards `/api` and `/socket.io` requests to the backend on port
+4000, including live tracking WebSocket connections. No environment variables
+are needed for local startup. For a production build served locally, run
+`npm run build` and `npm run preview` in `client`, with the backend still running.
+`VITE_API_URL` can override the API origin for separately configured deployments.
 
 ## R1 route
 

@@ -10,6 +10,10 @@ const headers={
   'Content-Security-Policy':policy,
 };
 const placeholder='__PBS_DEVELOPMENT_NONCE__';
+const proxy={
+  '/api':{target:'http://127.0.0.1:4000'},
+  '/socket.io':{target:'http://127.0.0.1:4000',ws:true},
+};
 function developmentNonce(){
   return {name:'pbs-development-csp',apply:'serve',configureServer(server){
     server.middlewares.use((req,res,next)=>{
@@ -32,6 +36,6 @@ function developmentNonce(){
 export default defineConfig(({command})=>({
   plugins:[react(),developmentNonce()],
   html:command==='serve'?{cspNonce:placeholder}:undefined,
-  server:{host:'127.0.0.1',port:5173,strictPort:true,headers},
-  preview:{host:'127.0.0.1',headers},
+  server:{host:'127.0.0.1',port:5173,strictPort:true,headers,proxy},
+  preview:{host:'127.0.0.1',port:5173,strictPort:true,headers,proxy},
 }));
